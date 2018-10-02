@@ -25,7 +25,7 @@
 # 14) rerun analysis at genus level in palms
 # 15) check bias in the palm dataset
 
-# Data accompanying code availabe in "./data/" folder of the GitHub repo
+# Data accompanying code available in "./data/" folder of the GitHub repo https://github.com/atanzap/age-extinction-plants
 
 ################################################################################
 ###### 1) LOAD PACKAGES AND RELEVANT FUNCTIONS
