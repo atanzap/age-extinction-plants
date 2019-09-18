@@ -26,6 +26,7 @@
 # 16) sensitivity analysis for sampling coverage
 
 # Data accompanying code available in "./data/" folder of the GitHub repo https://github.com/atanzap/age-extinction-plants
+# Code assumes working directory set to that containing data files.
 
 ################################################################################
 ###### 1) LOAD PACKAGES AND RELEVANT FUNCTIONS
