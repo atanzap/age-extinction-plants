@@ -27,6 +27,7 @@
 
 # Data accompanying code available in "./data/" folder of the GitHub repo https://github.com/atanzap/age-extinction-plants
 # Code assumes working directory set to that containing data files.
+# Utility functions must also be available in working directory folder
 
 ################################################################################
 ###### 1) LOAD PACKAGES AND RELEVANT FUNCTIONS
@@ -108,77 +109,9 @@ phylo_g_lm2 <- function(formula, data, tree, model, method, boot = 0, ...) {
 
   return(res)
 }
-phylo_path2 <- function(model_set, data, tree, model = 'lambda', method = 'logistic_MPLE',
-                        order = NULL, parallel = NULL, na.rm = TRUE, ...) {
-  # Always coerce to data.frame, as tibbles and data.tables do NOT play nice.
-  data <- as.data.frame(data)
-  tmp <- check_models_data_tree(model_set, data, tree, na.rm)
-  model_set <- tmp$model_set
-  data <- tmp$data
-  tree <- tmp$tree
 
-  if (is.null(order)) {
-    order <- find_consensus_order(model_set)
-  }
-  formulas <- lapply(model_set, find_formulas, order)
-  formulas <- purrr::map(formulas,
-                         ~purrr::map(.x, ~{attr(., ".Environment") <- NULL; .}))
-  f_list <- unique(unlist(formulas))
-  if (!is.null(parallel)) {
-    cl <- parallel::makeCluster(min(c(parallel::detectCores() - 1,
-                                      length(f_list))),
-                                parallel)
-    parallel::clusterExport(cl, list('phylo_g_lm2'), environment())
-    on.exit(parallel::stopCluster(cl))
-  } else {
-    cl <- NULL
-  }
-  dsep_models_runs <- pbapply::pblapply(
-    f_list,
-    function(x, data, tree, model, method, ...) {
-      phylo_g_lm2(x, data, tree, model, method, ...)
-    },
-    data = data, tree = tree, model = model, method = method, cl = cl)
-  # Produce appropriate error if needed
-  errors <- purrr::map(dsep_models_runs, 'error')
-  purrr::map2(errors, f_list,
-              ~if(!is.null(.x))
-                stop(paste('Fitting the following model:\n   ',
-                           Reduce(paste, deparse(.y)),
-                           '\nproduced this error:\n   ', .x),
-                     call. = FALSE))
-  # Collect warnings as well, but save those for later.
-  warnings <- purrr::map(dsep_models_runs, 'warning')
-  warnings <- purrr::map2(warnings, f_list,
-                          ~if(!is.null(.x))
-                             paste('Fitting the following model:\n   ',
-                                       Reduce(paste, deparse(.y)),
-                                       '\nproduced this/these warning(s):\n   ', .x))
-  warnings <- warnings(!sapply(warnings, is.null))
-  if (length(warnings) > 1) {
-    warning('Some models produced warnings. Use `show_warnings()` to view them.')
-  }
-
-  # Collect models.
-  dsep_models <- purrr::map(dsep_models_runs, 'result')
-  dsep_models <- purrr::map(formulas, ~dsep_models[match(.x, f_list)])
-
-  d_sep <- purrr::map2(
-    formulas,
-    dsep_models,
-    ~dplyr::data_frame(
-      d_sep = as.character(.x),
-      p = purrr::map_dbl(.y, get_p),
-      phylo_par = purrr::map_dbl(.y, get_phylo_param),
-      model = .y
-    )
-  )
-
-  out <- list(d_sep = d_sep, model_set = model_set, data = data, tree = tree,
-              model = model, method = method, dots = list(...), warnings = warnings)
-  class(out) <- 'phylopath'
-  return(out)
-}
+# load remaining utility functions, mostly from phylopath
+source("Utility functions to support analyses.R")
 
 
 
